@@ -16,6 +16,7 @@ import TopicFeature
 import MenuFeature
 import AuthFeature
 import ProfileFeature
+import HistoryFeature
 import SettingsFeature
 import AlertToast
 import SFSafeSymbols
@@ -179,6 +180,8 @@ public struct AppView: View {
             ProfileScreen(store: store.scope(state: \.profile, action: \.profile))
         } destination: { store in
             switch store.case {
+            case let .history(store):
+                HistoryScreen(store: store)
             case let .settings(store):
                 SettingsScreen(store: store)
             }

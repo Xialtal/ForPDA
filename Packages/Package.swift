@@ -19,6 +19,7 @@ let package = Package(
         .library(name: "MenuFeature", targets: ["MenuFeature"]),
         .library(name: "AuthFeature", targets: ["AuthFeature"]),
         .library(name: "ProfileFeature", targets: ["ProfileFeature"]),
+        .library(name: "HistoryFeature", targets: ["HistoryFeature"]),
         .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
         
         // Clients
@@ -68,6 +69,7 @@ let package = Package(
                 "MenuFeature",
                 "AuthFeature",
                 "ProfileFeature",
+                "HistoryFeature",
                 "SettingsFeature",
                 "AnalyticsClient",
                 "CacheClient",
@@ -210,6 +212,19 @@ let package = Package(
                 .product(name: "SkeletonUI", package: "SkeletonUI"),
                 .product(name: "NukeUI", package: "nuke"),
                 .product(name: "SFSafeSymbols", package: "SFSafeSymbols")
+            ]
+        ),
+        .target(
+            name: "HistoryFeature",
+            dependencies: [
+                "Models",
+                "SharedUI",
+                "APIClient",
+                "CacheClient",
+                "AnalyticsClient",
+                "ParsingClient",
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "NukeUI", package: "nuke")
             ]
         ),
         .target(

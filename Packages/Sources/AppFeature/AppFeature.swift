@@ -16,6 +16,7 @@ import TopicFeature
 import MenuFeature
 import AuthFeature
 import ProfileFeature
+import HistoryFeature
 import SettingsFeature
 import APIClient
 import Models
@@ -48,6 +49,7 @@ public struct AppFeature: Sendable {
     
     @Reducer(state: .equatable)
     public enum ProfilePath {
+        case history(HistoryFeature)
         case settings(SettingsFeature)
     }
     
@@ -67,6 +69,7 @@ public struct AppFeature: Sendable {
         public var forumsList: ForumsListFeature.State
         public var forum: ForumFeature.State
         public var profile: ProfileFeature.State
+        public var history: HistoryFeature.State
         
         @Presents public var auth: AuthFeature.State?
         
@@ -100,6 +103,7 @@ public struct AppFeature: Sendable {
             forumsList: ForumsListFeature.State = ForumsListFeature.State(),
             forum: ForumFeature.State = ForumFeature.State(),
             profile: ProfileFeature.State = ProfileFeature.State(),
+            history: HistoryFeature.State = HistoryFeature.State(),
             auth: AuthFeature.State? = nil,
             selectedTab: AppView.Tab = .articlesList,
             previousTab: AppView.Tab = .articlesList,
@@ -119,6 +123,7 @@ public struct AppFeature: Sendable {
             self.forumsList = forumsList
             self.forum = forum
             self.profile = profile
+            self.history = history
             
             self.auth = auth
             
@@ -145,6 +150,7 @@ public struct AppFeature: Sendable {
         case forumsList(ForumsListFeature.Action)
         case forum(ForumFeature.Action)
         case profile(ProfileFeature.Action)
+        case history(HistoryFeature.Action)
         
         case auth(PresentationAction<AuthFeature.Action>)
         
@@ -185,6 +191,10 @@ public struct AppFeature: Sendable {
         
         Scope(state: \.profile, action: \.profile) {
             ProfileFeature()
+        }
+        
+        Scope(state: \.history, action: \.history) {
+            HistoryFeature()
         }
         
         Reduce { state, action in
@@ -265,7 +275,7 @@ public struct AppFeature: Sendable {
                 
                 // MARK: - Default
                 
-            case .articlesList, .forumsList, .forum, .profile:
+            case .articlesList, .forumsList, .forum, .history, .profile:
                 return .none
                 
             case .articlesPath, .forumPath, .profilePath:
@@ -447,6 +457,16 @@ public struct AppFeature: Sendable {
                 
             case .profile(.logoutButtonTapped):
                 state.selectedTab = .articlesList
+                return .none
+                
+            case .profile(.historyButtonTapped):
+                state.profilePath.append(.history(HistoryFeature.State()))
+                return .none
+                
+            case let .profilePath(.element(id: _, action: .history(.topicTapped(id)))):
+                state.forumPath.append(.topic(TopicFeature.State(topicId: id)))
+                state.selectedTab = .forum
+                
                 return .none
                 
             default:

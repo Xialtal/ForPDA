@@ -97,18 +97,22 @@ public struct ForumParser {
     
     private static func parseTopic(_ array: [[Any]]) -> [TopicInfo] {
         return array.map { topic in
-            return TopicInfo(
-                id: topic[0] as! Int,
-                name: topic[1] as! String,
-                description: topic[2] as! String,
-                flag: topic[3] as! Int,
-                postsCount: topic[4] as! Int,
-                lastPost: TopicInfo.LastPost(
-                    date: Date(timeIntervalSince1970: topic[5] as! TimeInterval),
-                    userId: topic[6] as! Int,
-                    username: topic[7] as! String
-                )
-            )
+            return parseTopic(topic)
         }
+    }
+    
+    internal static func parseTopic(_ array: [Any]) -> TopicInfo {
+        return TopicInfo(
+            id: array[0] as! Int,
+            name: array[1] as! String,
+            description: array[2] as! String,
+            flag: array[3] as! Int,
+            postsCount: array[4] as! Int,
+            lastPost: TopicInfo.LastPost(
+                date: Date(timeIntervalSince1970: array[5] as! TimeInterval),
+                userId: array[6] as! Int,
+                username: array[7] as! String
+            )
+        )
     }
 }
