@@ -1,8 +1,8 @@
 //
-//  ForumScreen.swift
+//  FavoritesScreen.swift
 //  ForPDA
 //
-//  Created by Xialtal on 25.10.24.
+//  Created by Xialtal on 8.11.24.
 //
 
 import SwiftUI
@@ -12,12 +12,12 @@ import SFSafeSymbols
 import SharedUI
 import Models
 
-public struct ForumScreen: View {
+public struct FavoritesScreen: View {
     
-    @Perception.Bindable public var store: StoreOf<ForumFeature>
+    @Perception.Bindable public var store: StoreOf<FavoritesFeature>
     @Environment(\.tintColor) private var tintColor
     
-    public init(store: StoreOf<ForumFeature>) {
+    public init(store: StoreOf<FavoritesFeature>) {
         self.store = store
     }
     
@@ -26,22 +26,14 @@ public struct ForumScreen: View {
             ZStack {
                 Color.Background.primary
                     .ignoresSafeArea()
-                
-                if let forum = store.forum, !store.isLoadingTopics {
-                    List {
-                        if !forum.subforums.isEmpty {
-                            SubforumsSection(subforums: forum.subforums)
-                        }
-                        
-                        if !forum.announcements.isEmpty {
-                            AnnouncmentsSection(announcements: forum.announcements)
-                        }
 
-                        if !store.topicsPinned.isEmpty {
-                            TopicsSection(topics: store.topicsPinned, pinned: true)
+                if !store.isLoading {
+                    List {
+                        if !store.favoritesImportant.isEmpty {
+                            FavoritesSection(favorites: store.favoritesImportant, important: true)
                         }
                         
-                        TopicsSection(topics: store.topics, pinned: false)
+                        FavoritesSection(favorites: store.favorites, important: false)
                     }
                     .scrollContentBackground(.hidden)
                 } else {
@@ -49,16 +41,12 @@ public struct ForumScreen: View {
                         .frame(width: 24, height: 24)
                 }
             }
-            .navigationTitle(Text(store.forumName))
+            .navigationTitle(Text("Favorites", bundle: .module))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack {
-                        Button {
-                            // TODO: forum info
-                        } label: {
-                            Image(systemSymbol: .infoCircle)
-                        }
+                        // TODO: Favorites display settings.
                         
                         Button {
                             store.send(.settingsButtonTapped)
@@ -77,59 +65,37 @@ public struct ForumScreen: View {
     // MARK: - Topics
     
     @ViewBuilder
-    private func TopicsSection(topics: [TopicInfo], pinned: Bool) -> some View {
+    private func FavoritesSection(favorites: [FavoriteInfo], important: Bool) -> some View {
         Section {
-            if !pinned, store.pageNavigation.shouldShow {
+            if !important, store.pageNavigation.shouldShow {
                 PageNavigation(store: store.scope(state: \.pageNavigation, action: \.pageNavigation))
             }
             
-            ForEach(topics) { topic in
-                Row(title: topic.name, lastPost: topic.lastPost, closed: topic.isClosed, unread: topic.isUnread) {
-                    store.send(.topicTapped(id: topic.id))
+            ForEach(favorites, id: \.hashValue) { favorite in
+                Row(
+                    title: favorite.topic.name,
+                    lastPost: favorite.topic.lastPost,
+                    unread: favorite.topic.isUnread,
+                    notify: favorite.notify
+                ) {
+                    store.send(
+                        .favoriteTapped(
+                            id: favorite.topic.id,
+                            name: favorite.topic.name,
+                            isForum: favorite.isForum
+                        )
+                    )
                 }
             }
-            .alignmentGuide(.listRowSeparatorLeading) { _ in return 0 }
             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
             
-            if !pinned, store.pageNavigation.shouldShow {
+            if !important, store.pageNavigation.shouldShow {
                 PageNavigation(store: store.scope(state: \.pageNavigation, action: \.pageNavigation))
             }
         } header: {
-            Header(title: pinned ? "Pinned topics" : "Topics")
-        }
-        .listRowBackground(Color.Background.teritary)
-    }
-    
-    // MARK: - Subforums section
-    
-    @ViewBuilder
-    private func SubforumsSection(subforums: [ForumInfo]) -> some View {
-        Section {
-            ForEach(subforums) { forum in
-                Row(title: forum.name, unread: forum.isUnread) {
-                    store.send(.subforumTapped(id: forum.id, name: forum.name))
-                }
-            }
-            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-        } header: {
-            Header(title: "Subforums")
-        }
-        .listRowBackground(Color.Background.teritary)
-    }
-    
-    // MARK: - Announcements section
-    
-    @ViewBuilder
-    private func AnnouncmentsSection(announcements: [AnnouncementInfo]) -> some View {
-        Section {
-            ForEach(announcements) { announcement in
-                Row(title: announcement.name) {
-                    store.send(.topicTapped(id: announcement.id))
-                }
-            }
-            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-        } header: {
-            Header(title: "Announcements")
+            Header(title: important
+                   ? LocalizedStringKey("Important")
+                   : LocalizedStringKey("Topics / Forums"))
         }
         .listRowBackground(Color.Background.teritary)
     }
@@ -140,23 +106,19 @@ public struct ForumScreen: View {
     private func Row(
         title: String,
         lastPost: TopicInfo.LastPost? = nil,
-        closed: Bool = false,
         unread: Bool = false,
-        action: @escaping () -> Void
+        notify: FavoriteInfo.Notify,
+        action: @escaping () -> Void = {}
     ) -> some View {
         HStack(spacing: 0) { // Hacky HStack to enable tap animations
             Button {
                 action()
             } label: {
-                if closed {
-                    Image(systemSymbol: .lock)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 16, height: 16)
-                        .foregroundStyle(Color.Labels.secondary)
-                }
-                
                 HStack(spacing: 8) {
+                    // TODO: Add notify symbol.
+                    // If notify - .all, and isNotifyHatUpdate == true,
+                    // then display isNotifyHatUpdate symbol.
+                    
                     VStack(alignment: .leading, spacing: 4) {
                         RichText(
                             text: NSAttributedString(string: title),
@@ -166,7 +128,7 @@ public struct ForumScreen: View {
                         
                         if let lastPost {
                             HStack(spacing: 0) {
-                                Text(lastPost.formattedDate, bundle: Bundle.models)
+                                Text(lastPost.formattedDate, bundle: .models)
                                     .font(.caption)
                                     .foregroundStyle(Color.Labels.secondary)
                                     .padding(.trailing, 16)
@@ -185,7 +147,7 @@ public struct ForumScreen: View {
                     }
                     
                     Spacer(minLength: 0)
-
+                    
                     if unread {
                         Circle()
                             .font(.title2)
@@ -227,18 +189,11 @@ extension Bundle {
 
 #Preview {
     NavigationStack {
-        ForumScreen(
+        FavoritesScreen(
             store: Store(
-                initialState: ForumFeature.State.init(
-                    forumId: 0,
-                    forumName: "Test name"
-                )
+                initialState: FavoritesFeature.State(favorites: [.mock])
             ) {
-                ForumFeature()
-            } withDependencies: {
-                $0.apiClient.getForum = { @Sendable _, _, _ in
-                    return .mock
-                }
+                FavoritesFeature()
             }
         )
     }

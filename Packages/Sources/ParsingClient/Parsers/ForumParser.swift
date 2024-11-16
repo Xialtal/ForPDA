@@ -88,7 +88,7 @@ public struct ForumParser {
             
             return ForumInfo(
                 id: forum[0] as! Int,
-                name: forum[1] as! String,
+                name: (forum[1] as! String).convertHtmlCodes(),
                 flag: forum[2] as! Int,
                 redirectUrl: redirectUrl
             )

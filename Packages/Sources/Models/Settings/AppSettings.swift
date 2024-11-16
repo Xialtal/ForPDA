@@ -19,31 +19,43 @@ public struct AppSettings: Sendable, Equatable, Codable {
     
     public var articlesListRowType: ArticleListRowType
     public var bookmarksListRowType: ArticleListRowType
+    public var startPage: AppTab
     public var appColorScheme: AppColorScheme
     public var backgroundTheme: BackgroundTheme
     public var appTintColor: AppTintColor
+    public var forumPerPage: Int
+    public var topicPerPage: Int
     
     public init(
         articlesListRowType: ArticleListRowType,
         bookmarksListRowType: ArticleListRowType,
+        startPage: AppTab,
         appColorScheme: AppColorScheme,
         backgroundTheme: BackgroundTheme,
-        appTintColor: AppTintColor
+        appTintColor: AppTintColor,
+        forumPerPage: Int,
+        topicPerPage: Int
     ) {
         self.articlesListRowType = articlesListRowType
         self.bookmarksListRowType = bookmarksListRowType
+        self.startPage = startPage
         self.appColorScheme = appColorScheme
         self.backgroundTheme = backgroundTheme
         self.appTintColor = appTintColor
+        self.forumPerPage = forumPerPage
+        self.topicPerPage = topicPerPage
     }
     
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.articlesListRowType = try container.decodeIfPresent(ArticleListRowType.self, forKey: .articlesListRowType) ?? AppSettings.default.articlesListRowType
         self.bookmarksListRowType = try container.decodeIfPresent(ArticleListRowType.self, forKey: .bookmarksListRowType) ?? AppSettings.default.bookmarksListRowType
+        self.startPage = try container.decodeIfPresent(AppTab.self, forKey: .startPage) ?? AppSettings.default.startPage
         self.appColorScheme = try container.decodeIfPresent(AppColorScheme.self, forKey: .appColorScheme) ?? AppSettings.default.appColorScheme
         self.backgroundTheme = try container.decodeIfPresent(BackgroundTheme.self, forKey: .backgroundTheme) ?? AppSettings.default.backgroundTheme
         self.appTintColor = try container.decodeIfPresent(AppTintColor.self, forKey: .appTintColor) ?? AppSettings.default.appTintColor
+        self.forumPerPage = try container.decodeIfPresent(Int.self, forKey: .forumPerPage) ?? AppSettings.default.forumPerPage
+        self.topicPerPage = try container.decodeIfPresent(Int.self, forKey: .topicPerPage) ?? AppSettings.default.topicPerPage
     }
 }
 
@@ -51,8 +63,11 @@ public extension AppSettings {
     static let `default` = AppSettings(
         articlesListRowType: .short,
         bookmarksListRowType: .short,
+        startPage: .articlesList,
         appColorScheme: .system,
         backgroundTheme: .blue,
-        appTintColor: .primary
+        appTintColor: .primary,
+        forumPerPage: 30,
+        topicPerPage: 20
     )
 }

@@ -22,6 +22,7 @@ public struct ParsingClient: Sendable {
     public var parseTopic: @Sendable (_ rawString: String) async throws -> Topic
     public var parseAnnouncement: @Sendable (_ rawString: String) async throws -> Announcement
     public var parseHistory: @Sendable (_ rawString: String) async throws -> [History]
+    public var parseFavorites: @Sendable (_ rawString: String) async throws -> Favorite
 }
 
 extension DependencyValues {
@@ -65,6 +66,9 @@ extension ParsingClient: DependencyKey {
         },
         parseHistory: { rawString in
             return try HistoryParser.parse(rawString: rawString)
+        },
+        parseFavorites: { rawString in
+            return try FavoriteParser.parse(rawString: rawString)
         }
     )
 }

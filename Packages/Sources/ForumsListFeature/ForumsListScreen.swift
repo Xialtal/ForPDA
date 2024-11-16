@@ -25,25 +25,30 @@ public struct ForumsListScreen: View {
                 Color.Background.primary
                     .ignoresSafeArea()
                 
-                List(store.state.forums, id: \.id) { structure in
-                    Section {
-                        ForEach(structure.forums) { forum in
-                            HStack(spacing: 25) {
-                                Row(title: forum.name, unread: forum.isUnread, action: {
-                                    store.send(.forumTapped(id: forum.id, name: forum.name))
-                                })
+                if !store.forums.isEmpty {
+                    List(store.forums, id: \.id) { forumRow in
+                        Section {
+                            ForEach(forumRow.forums) { forum in
+                                HStack(spacing: 25) {
+                                    Row(title: forum.name, unread: forum.isUnread) {
+                                        store.send(.forumTapped(id: forum.id, name: forum.name))
+                                    }
+                                }
+                                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                                .buttonStyle(.plain)
+                                .frame(height: 60)
                             }
-                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                            .buttonStyle(.plain)
-                            .frame(height: 60)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        } header: {
+                            Header(title: forumRow.title)
                         }
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    } header: {
-                        Header(title: structure.title)
+                        .listRowBackground(Color.Background.teritary)
                     }
-                    .listRowBackground(Color.Background.teritary)
+                    .scrollContentBackground(.hidden)
+                } else {
+                    PDALoader()
+                        .frame(width: 24, height: 24)
                 }
-                .scrollContentBackground(.hidden)
             }
             .navigationTitle(Text("Forum", bundle: .module))
             .navigationBarTitleDisplayMode(.large)
@@ -65,7 +70,7 @@ public struct ForumsListScreen: View {
     // MARK: - Row
     
     @ViewBuilder
-    private func Row(title: String, unread: Bool, action: @escaping () -> Void = {}) -> some View {
+    private func Row(title: String, unread: Bool, action: @escaping () -> Void) -> some View {
         HStack(spacing: 0) { // Hacky HStack to enable tap animations
             Button {
                 action()
@@ -75,16 +80,16 @@ public struct ForumsListScreen: View {
                         .font(.body)
                         .foregroundStyle(Color.Labels.primary)
                     
-                    Spacer(minLength: 8)
+                    Spacer(minLength: 0)
                     
                     if unread {
                         Circle()
                             .font(.title2)
                             .foregroundStyle(tintColor)
                             .frame(width: 8)
-                            .padding(.trailing, 12)
                     }
                 }
+                .contentShape(Rectangle())
             }
         }
         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))

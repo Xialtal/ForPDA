@@ -16,6 +16,7 @@ let package = Package(
         .library(name: "ForumsListFeature", targets: ["ForumsListFeature"]),
         .library(name: "ForumFeature", targets: ["ForumFeature"]),
         .library(name: "TopicFeature", targets: ["TopicFeature"]),
+        .library(name: "FavoritesFeature", targets: ["FavoritesFeature"]),
         .library(name: "MenuFeature", targets: ["MenuFeature"]),
         .library(name: "AuthFeature", targets: ["AuthFeature"]),
         .library(name: "ProfileFeature", targets: ["ProfileFeature"]),
@@ -38,8 +39,7 @@ let package = Package(
         .library(name: "TCAExtensions", targets: ["TCAExtensions"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/SubvertDev/PDAPI_SPM.git", from: "0.1.0"),
-        .package(url: "https://github.com/pointfreeco/swift-composable-architecture.git", from: "1.15.2"),
+        .package(url: "https://github.com/pointfreeco/swift-composable-architecture.git", from: "1.16.0"),
         .package(url: "https://github.com/SFSafeSymbols/SFSafeSymbols.git", from: "5.3.0"),
         .package(url: "https://github.com/hyperoslo/Cache.git", from: "7.3.0"),
         .package(url: "https://github.com/kean/Nuke.git", from: "12.8.0"),
@@ -51,6 +51,7 @@ let package = Package(
         .package(url: "https://github.com/SubvertDev/AlertToast.git", revision: "d0f7d6b"),
         .package(url: "https://github.com/kirualex/SwiftyGif.git", from: "5.4.4"),
         .package(url: "https://github.com/ZhgChgLi/ZMarkupParser.git", from: "1.11.0"),
+        .package(url: "https://github.com/SubvertDev/PDAPI_SPM.git", from: "0.2.0"),
         .package(url: "https://github.com/SubvertDev/RichTextKit.git", branch: "main")
     ],
     targets: [
@@ -66,6 +67,7 @@ let package = Package(
                 "ForumsListFeature",
                 "ForumFeature",
                 "TopicFeature",
+                "FavoritesFeature",
                 "MenuFeature",
                 "AuthFeature",
                 "ProfileFeature",
@@ -75,6 +77,7 @@ let package = Package(
                 "CacheClient",
                 "NotificationsClient",
                 "Models",
+                "TCAExtensions",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "AlertToast", package: "AlertToast")
             ]
@@ -147,6 +150,7 @@ let package = Package(
         .target(
             name: "ForumFeature",
             dependencies: [
+                "PageNavigationFeature",
                 "Models",
                 "SharedUI",
                 "APIClient",
@@ -160,6 +164,23 @@ let package = Package(
         .target(
             name: "TopicFeature",
             dependencies: [
+                "PageNavigationFeature",
+                "Models",
+                "SharedUI",
+                "APIClient",
+                "CacheClient",
+                "AnalyticsClient",
+                "ParsingClient",
+                "PersistenceKeys",
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "RichTextKit", package: "RichTextKit"),
+                .product(name: "NukeUI", package: "nuke")
+            ]
+        ),
+        .target(
+            name: "FavoritesFeature",
+            dependencies: [
+                "PageNavigationFeature",
                 "Models",
                 "SharedUI",
                 "APIClient",
@@ -167,7 +188,6 @@ let package = Package(
                 "AnalyticsClient",
                 "ParsingClient",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
-                .product(name: "RichTextKit", package: "RichTextKit"),
                 .product(name: "NukeUI", package: "nuke")
             ]
         ),
@@ -309,6 +329,15 @@ let package = Package(
         // MARK: - Shared
         
         .target(
+            name: "PageNavigationFeature",
+            dependencies: [
+                "Models",
+                "PersistenceKeys",
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "SFSafeSymbols", package: "SFSafeSymbols")
+            ]
+        ),
+        .target(
             name: "Models",
             dependencies: [
                 .product(name: "SFSafeSymbols", package: "SFSafeSymbols")
@@ -320,7 +349,8 @@ let package = Package(
                 .product(name: "NukeUI", package: "nuke"),
                 .product(name: "SFSafeSymbols", package: "SFSafeSymbols"),
                 .product(name: "SwiftyGif", package: "SwiftyGif"),
-                .product(name: "SkeletonUI", package: "SkeletonUI")
+                .product(name: "SkeletonUI", package: "SkeletonUI"),
+                .product(name: "RichTextKit", package: "RichTextKit")
             ]
         ),
         .target(
@@ -349,7 +379,7 @@ for target in package.targets where target.type != .binary {
     swiftSettings.append(.enableUpcomingFeature("ExistentialAny"))
     swiftSettings.append(
         .unsafeFlags(["-Xfrontend",
-                      "-warn-long-function-bodies=500",
+                      "-warn-long-function-bodies=550",
                       "-Xfrontend",
                       "-warn-long-expression-type-checking=100"])
     )

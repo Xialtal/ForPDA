@@ -13,6 +13,7 @@ import BookmarksFeature
 import ForumsListFeature
 import ForumFeature
 import TopicFeature
+import FavoritesFeature
 import MenuFeature
 import AuthFeature
 import ProfileFeature
@@ -20,6 +21,7 @@ import HistoryFeature
 import SettingsFeature
 import APIClient
 import Models
+import TCAExtensions
 
 @Reducer
 public struct AppFeature: Sendable {
@@ -37,6 +39,11 @@ public struct AppFeature: Sendable {
     
     @Reducer(state: .equatable)
     public enum BookmarksPath {
+        case settings(SettingsFeature)
+    }
+    
+    @Reducer(state: .equatable)
+    public enum FavoritesPath {
         case settings(SettingsFeature)
     }
     
@@ -60,31 +67,35 @@ public struct AppFeature: Sendable {
         public var appDelegate: AppDelegateFeature.State
 
         public var articlesPath: StackState<ArticlesPath.State>
-//        public var bookmarksPath: StackState<BookmarksPath.State>
+        // public var bookmarksPath: StackState<BookmarksPath.State>
+        public var favoritesPath: StackState<FavoritesPath.State>
         public var forumPath: StackState<ForumPath.State>
         public var profilePath: StackState<ProfilePath.State>
         
         public var articlesList: ArticlesListFeature.State
-//        public var bookmarks: BookmarksFeature.State
+        // public var bookmarks: BookmarksFeature.State
+        public var favorites: FavoritesFeature.State
         public var forumsList: ForumsListFeature.State
         public var forum: ForumFeature.State
         public var profile: ProfileFeature.State
         public var history: HistoryFeature.State
         
         @Presents public var auth: AuthFeature.State?
+        @Presents public var alert: AlertState<Never>?
         
         @Shared(.userSession) public var userSession: UserSession?
         @Shared(.appSettings) public var appSettings: AppSettings
-        public var selectedTab: AppView.Tab
-        public var previousTab: AppView.Tab
+        
+        public var selectedTab: AppTab
+        public var previousTab: AppTab
         public var isShowingTabBar: Bool
         public var showToast: Bool
         public var toast: ToastInfo
         public var localizationBundle: Bundle? {
             switch toast.screen {
-            case .articlesList: return Bundle.allBundles.first(where: { $0.bundlePath.contains("ArticlesListFeature") })
-            case .article:      return Bundle.allBundles.first(where: { $0.bundlePath.contains("ArticleFeature") })
-            case .comments:     return Bundle.allBundles.first(where: { $0.bundlePath.contains("Models") })
+            case .articlesList: return Bundle.articlesListFeature
+            case .article:      return Bundle.articleFeature
+            case .comments:     return Bundle.models
             }
         }
         
@@ -95,18 +106,21 @@ public struct AppFeature: Sendable {
         public init(
             appDelegate: AppDelegateFeature.State = AppDelegateFeature.State(),
             articlesPath: StackState<ArticlesPath.State> = StackState(),
-//            bookmarksPath: StackState<BookmarksPath.State> = StackState(),
+            // bookmarksPath: StackState<BookmarksPath.State> = StackState(),
+            favoritesPath: StackState<FavoritesPath.State> = StackState(),
             forumPath: StackState<ForumPath.State> = StackState(),
             menuPath: StackState<ProfilePath.State> = StackState(),
             articlesList: ArticlesListFeature.State = ArticlesListFeature.State(),
-//            bookmarks: BookmarksFeature.State = BookmarksFeature.State(),
+            // bookmarks: BookmarksFeature.State = BookmarksFeature.State(),
+            favorites: FavoritesFeature.State = FavoritesFeature.State(),
             forumsList: ForumsListFeature.State = ForumsListFeature.State(),
-            forum: ForumFeature.State = ForumFeature.State(),
+            forum: ForumFeature.State = ForumFeature.State(forumId: 0, forumName: "Test"),
             profile: ProfileFeature.State = ProfileFeature.State(),
             history: HistoryFeature.State = HistoryFeature.State(),
             auth: AuthFeature.State? = nil,
-            selectedTab: AppView.Tab = .articlesList,
-            previousTab: AppView.Tab = .articlesList,
+            alert: AlertState<Never>? = nil,
+            selectedTab: AppTab = .articlesList,
+            previousTab: AppTab = .articlesList,
             isShowingTabBar: Bool = true,
             showToast: Bool = false,
             toast: ToastInfo = ToastInfo(screen: .articlesList, message: String(""), isError: false)
@@ -114,50 +128,62 @@ public struct AppFeature: Sendable {
             self.appDelegate = appDelegate
 
             self.articlesPath = articlesPath
-//            self.bookmarksPath = bookmarksPath
+            // self.bookmarksPath = bookmarksPath
+            self.favoritesPath = favoritesPath
             self.forumPath = forumPath
             self.profilePath = menuPath
             
             self.articlesList = articlesList
-//            self.bookmarks = bookmarks
+            // self.bookmarks = bookmarks
+            self.favorites = favorites
             self.forumsList = forumsList
             self.forum = forum
             self.profile = profile
             self.history = history
             
             self.auth = auth
+            self.alert = alert
             
             self.selectedTab = selectedTab
             self.previousTab = previousTab
             self.isShowingTabBar = isShowingTabBar
             self.showToast = showToast
             self.toast = toast
+            
+            self.selectedTab = _appSettings.startPage.wrappedValue
         }
     }
     
     // MARK: - Action
     
     public enum Action: BindableAction {
+        case onAppear
+        
         case appDelegate(AppDelegateFeature.Action)
 
         case articlesPath(StackActionOf<ArticlesPath>)
-//        case bookmarksPath(StackActionOf<BookmarksPath>)
+        // case bookmarksPath(StackActionOf<BookmarksPath>)
+        case favoritesPath(StackActionOf<FavoritesPath>)
         case forumPath(StackActionOf<ForumPath>)
         case profilePath(StackActionOf<ProfilePath>)
         
         case articlesList(ArticlesListFeature.Action)
-//        case bookmarks(BookmarksFeature.Action)
+        // case bookmarks(BookmarksFeature.Action)
+        case favorites(FavoritesFeature.Action)
         case forumsList(ForumsListFeature.Action)
         case forum(ForumFeature.Action)
         case profile(ProfileFeature.Action)
         case history(HistoryFeature.Action)
         
         case auth(PresentationAction<AuthFeature.Action>)
+        case alert(PresentationAction<Never>)
         
         case binding(BindingAction<State>) // For Toast
-        case didSelectTab(AppView.Tab)
+        case didSelectTab(AppTab)
         case deeplink(URL)
         case scenePhaseDidChange(from: ScenePhase, to: ScenePhase)
+        
+        case _failedToConnect(any Error)
     }
     
     // MARK: - Dependencies
@@ -177,9 +203,13 @@ public struct AppFeature: Sendable {
             ArticlesListFeature()
         }
         
-//        Scope(state: \.bookmarks, action: \.bookmarks) {
-//            BookmarksFeature()
-//        }
+        // Scope(state: \.bookmarks, action: \.bookmarks) {
+            // BookmarksFeature()
+        // }
+        
+        Scope(state: \.favorites, action: \.favorites) {
+            FavoritesFeature()
+        }
         
         Scope(state: \.forumsList, action: \.forumsList) {
             ForumsListFeature()
@@ -202,7 +232,21 @@ public struct AppFeature: Sendable {
                 
                 // MARK: - Common
                 
-            case .appDelegate, .binding:
+            case .onAppear:
+                return .run { send in
+                    do {
+                        await apiClient.setLogResponses(type: .none)
+                        try await apiClient.connect()
+                    } catch {
+                        await send(._failedToConnect(error))
+                    }
+                }
+                
+            case ._failedToConnect:
+                state.alert = .failedToConnect
+                return .none
+                
+            case .appDelegate, .binding, .alert:
                 return .none
                 
             case let .didSelectTab(tab):
@@ -275,10 +319,10 @@ public struct AppFeature: Sendable {
                 
                 // MARK: - Default
                 
-            case .articlesList, .forumsList, .forum, .history, .profile:
+            case .articlesList, .forumsList, .forum, .profile, .history, .favorites:
                 return .none
                 
-            case .articlesPath, .forumPath, .profilePath:
+            case .articlesPath, .forumPath, .profilePath, .favoritesPath:
                 return .none
             }
         }
@@ -372,40 +416,75 @@ public struct AppFeature: Sendable {
             // TODO: Another way?
             Reduce { state, _ in
                 state.isShowingTabBar = newValue.count == 0
-//                let hasSettings = newValue.contains(where: { screen in
-//                    if case .settings = screen { return true }
-//                    return false
-//                })
-//                state.isShowingTabBar = !hasSettings
+                // let hasSettings = newValue.contains(where: { screen in
+                //     if case .settings = screen { return true }
+                //     return false
+                // })
+                // state.isShowingTabBar = !hasSettings
                 return .none
             }
         }
         
         // MARK: - Bookmarks Path
         
-//        Reduce { state, action in
-//            switch action {
-//            case .bookmarks(.settingsButtonTapped):
-//                state.isShowingTabBar = false
-//                state.bookmarksPath.append(.settings(SettingsFeature.State()))
-//                return .none
-//                
-//            default:
-//                return .none
-//            }
-//        }
-//        .forEach(\.bookmarksPath, action: \.bookmarksPath)
-//        .onChange(of: \.bookmarksPath) { _, newValue in
-//            // TODO: Another way?
-//            Reduce { state, _ in
-//                let hasSettings = newValue.contains(where: { screen in
-//                    if case .settings = screen { return true }
-//                    return false
-//                })
-//                state.isShowingTabBar = !hasSettings
-//                return .none
-//            }
-//        }
+        // Reduce { state, action in
+            // switch action {
+            // case .bookmarks(.settingsButtonTapped):
+                // state.isShowingTabBar = false
+                // state.bookmarksPath.append(.settings(SettingsFeature.State()))
+                // return .none
+                //
+            // default:
+                // return .none
+            // }
+        // }
+        // .forEach(\.bookmarksPath, action: \.bookmarksPath)
+        // .onChange(of: \.bookmarksPath) { _, newValue in
+            // // TODO: Another way?
+            // Reduce { state, _ in
+                // let hasSettings = newValue.contains(where: { screen in
+                    // if case .settings = screen { return true }
+                    // return false
+                // })
+                // state.isShowingTabBar = !hasSettings
+                // return .none
+            // }
+        // }
+        
+        // MARK: - Favorites Path
+        
+        Reduce { state, action in
+            switch action {
+            case .favorites(.settingsButtonTapped):
+                state.isShowingTabBar = false
+                state.favoritesPath.append(.settings(SettingsFeature.State()))
+                return .none
+
+            case .favorites(.favoriteTapped(let id, let name, let isForum)):
+                state.selectedTab = .forum
+                if isForum {
+                    state.forumPath.append(.forum(ForumFeature.State(forumId: id, forumName: name)))
+                } else {
+                    state.forumPath.append(.topic(TopicFeature.State(topicId: id)))
+                }
+                return .none
+                
+            default:
+                return .none
+            }
+        }
+        .forEach(\.favoritesPath, action: \.favoritesPath)
+        .onChange(of: \.favoritesPath) { _, newValue in
+            // TODO: Another way?
+            Reduce { state, _ in
+                let hasSettings = newValue.contains(where: { screen in
+                    if case .settings = screen { return true }
+                    return false
+                })
+                state.isShowingTabBar = !hasSettings
+                return .none
+            }
+        }
         
         // MARK: - Forum Path
         
@@ -485,5 +564,21 @@ public struct AppFeature: Sendable {
                 return .none
             }
         }
+    }
+}
+
+// MARK: - Extensions
+
+extension Bundle {
+    static var articlesListFeature: Bundle? {
+        return Bundle.allBundles.first(where: { $0.bundlePath.contains("ArticlesListFeature") })
+    }
+    
+    static var articleFeature: Bundle? {
+        Bundle.allBundles.first(where: { $0.bundlePath.contains("ArticleFeature") })
+    }
+    
+    static var models: Bundle? {
+        Bundle.allBundles.first(where: { $0.bundlePath.contains("Models") })
     }
 }

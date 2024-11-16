@@ -13,6 +13,7 @@ import BookmarksFeature
 import ForumsListFeature
 import ForumFeature
 import TopicFeature
+import FavoritesFeature
 import MenuFeature
 import AuthFeature
 import ProfileFeature
@@ -24,39 +25,6 @@ import SharedUI
 import Models
 
 public struct AppView: View {
-    
-    public enum Tab: Int, CaseIterable {
-        case articlesList = 0
-//        case bookmarks
-        case forum
-        case profile
-        
-        var title: LocalizedStringKey {
-            switch self {
-            case .articlesList:
-                return "Feed"
-//            case .bookmarks:
-//                return "Bookmarks"
-            case .forum:
-                return "Forum"
-            case .profile:
-                return "Profile"
-            }
-        }
-        
-        var iconSymbol: SFSymbol {
-            switch self {
-            case .articlesList:
-                return .docTextImage
-//            case .bookmarks:
-//                return .bookmark
-            case .forum:
-                return .bubbleLeftAndBubbleRight
-            case .profile:
-                return .personCropCircle
-            }
-        }
-    }
     
     @Perception.Bindable public var store: StoreOf<AppFeature>
     @Environment(\.tintColor) private var tintColor
@@ -77,6 +45,7 @@ public struct AppView: View {
                 TabView(selection: $store.selectedTab) {
                     ArticlesListTab()
 //                    BookmarksTab()
+                    FavoritesTab()
                     ForumTab()
                     ProfileTab()
                 }
@@ -106,9 +75,13 @@ public struct AppView: View {
                     AuthScreen(store: store)
                 }
             }
+            .alert($store.scope(state: \.alert, action: \.alert))
             // Tint and environment should be after sheets/covers
             .tint(store.appSettings.appTintColor.asColor)
             .environment(\.tintColor, store.appSettings.appTintColor.asColor)
+            .onAppear {
+                store.send(.onAppear)
+            }
         }
     }
     
@@ -130,7 +103,7 @@ public struct AppView: View {
                 SettingsScreen(store: store)
             }
         }
-        .tag(Tab.articlesList)
+        .tag(AppTab.articlesList)
         .toolbar(store.isShowingTabBar ? .visible : .hidden, for: .tabBar)
     }
     
@@ -150,6 +123,21 @@ public struct AppView: View {
 //        .toolbar(store.isShowingTabBar ? .visible : .hidden, for: .tabBar)
 //    }
     
+    // MARK: - Favorites Tab
+    @ViewBuilder
+    private func FavoritesTab() -> some View {
+        NavigationStack(path: $store.scope(state: \.favoritesPath, action: \.favoritesPath)) {
+            FavoritesScreen(store: store.scope(state: \.favorites, action: \.favorites))
+        } destination: { store in
+            switch store.case {
+            case let .settings(store):
+                SettingsScreen(store: store)
+            }
+        }
+        .tag(AppTab.favorites)
+        .toolbar(store.isShowingTabBar ? .visible : .hidden, for: .tabBar)
+    }
+    
     // MARK: - Forum Tab
     
     @ViewBuilder
@@ -168,7 +156,7 @@ public struct AppView: View {
                 SettingsScreen(store: store)
             }
         }
-        .tag(Tab.forum)
+        .tag(AppTab.forum)
         .toolbar(store.isShowingTabBar ? .visible : .hidden, for: .tabBar)
     }
     
@@ -186,7 +174,7 @@ public struct AppView: View {
                 SettingsScreen(store: store)
             }
         }
-        .tag(Tab.profile)
+        .tag(AppTab.profile)
         .toolbar(store.isShowingTabBar ? .visible : .hidden, for: .tabBar)
     }
     
@@ -196,7 +184,7 @@ public struct AppView: View {
     private func PDATabView() -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                ForEach(Tab.allCases, id: \.self) { tab in
+                ForEach(AppTab.allCases, id: \.self) { tab in
                     Button {
                         store.send(.didSelectTab(tab))
                         shouldAnimatedTabItem[tab.rawValue].toggle()
@@ -226,7 +214,7 @@ public struct AppView: View {
                 .font(.body)
                 .bounceUpByLayerEffect(value: shouldAnimatedTabItem[index])
                 .frame(width: 32, height: 32)
-            Text(title, bundle: .module)
+            Text(title, bundle: .models)
                 .font(.caption2)
         }
         .foregroundStyle(store.selectedTab.rawValue == index

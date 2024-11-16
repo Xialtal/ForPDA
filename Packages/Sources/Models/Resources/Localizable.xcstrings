@@ -11,6 +11,16 @@
         }
       }
     },
+    "Articles" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Статьи"
+          }
+        }
+      }
+    },
     "Comment has been added" : {
       "localizations" : {
         "ru" : {
@@ -41,6 +51,26 @@
         }
       }
     },
+    "Favorites" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Избранное"
+          }
+        }
+      }
+    },
+    "Forum" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Форум"
+          }
+        }
+      }
+    },
     "No comment text" : {
       "localizations" : {
         "ru" : {
@@ -57,6 +87,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть в браузере"
+          }
+        }
+      }
+    },
+    "Profile" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профиль"
           }
         }
       }
@@ -81,6 +121,16 @@
         }
       }
     },
+    "Today, %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сегодня, %@"
+          }
+        }
+      }
+    },
     "Unknown error" : {
       "localizations" : {
         "ru" : {
@@ -97,6 +147,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Скоро будет исправлено :)"
+          }
+        }
+      }
+    },
+    "Yesterday, %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вчера, %@"
           }
         }
       }
